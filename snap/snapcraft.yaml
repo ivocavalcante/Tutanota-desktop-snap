@@ -1,0 +1,87 @@
+name: ivo-tutanota-desktop
+base: core22
+adopt-info: tutanota-desktop
+summary: "Best email service: end-to-end encrypted and no ads"
+description: |
+  Tutanota is the world's most secure email service, easy to use and private by design. You get fully encrypted calendars and contacts with all our personal and business email accounts.
+  Secure, green and ad-free. Email to feel good about.
+
+grade: devel
+confinement: strict
+
+plugs:
+  audio-playback:
+  unity7:
+  home:
+  network:
+  removable-media:
+  password-manager-service:
+  browser-support:
+  etc-vulkan:
+    interface: system-files
+    read:
+      - /etc/vulkan
+
+apps:
+  tutanota-desktop:
+    command: bin/start.sh
+    desktop: usr/share/applications/tutanota-desktop.desktop
+    environment:
+      PATH: $SNAP/opt/tutanota:$PATH
+    extensions:
+      - gnome
+
+parts:
+  tutanota-desktop:
+    plugin: npm
+    source: https://github.com/tutao/tutanota.git
+    source-tag: tutanota-release-3.115.2
+    build-snaps:
+      - node/18/stable
+    build-packages:
+      - python3
+      - pkg-config
+      - libsecret-1-dev
+    build-environment:
+      - PATH: /snap/node/current/bin/:$PATH
+    stage-packages:
+      - intel-media-va-driver-non-free
+      - mesa-va-drivers
+    override-build: |
+      set -euo pipefail
+
+      _pkgversion="snap1"
+      _version="$(git describe --tags | cut -d_ -f2 | sed 's/\(^.*\-\)\([[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+\)$/\2/')"
+
+      # Set Snap package version
+      craftctl set version="${_version}+${_pkgversion}"
+
+      npm ci
+      npm run build-packages --unpacked
+      node desktop --custom-desktop-release
+
+      _out_dir="linux-unpacked"
+      _artifacts_dir="${CRAFT_PART_BUILD}/build/desktop"
+      _install_dir="${CRAFT_PART_INSTALL}/opt"
+      _final_dir="${_install_dir}/tutanota"
+      mkdir -p "${_install_dir}"
+      cp -a "${_artifacts_dir}/${_out_dir}" "${_install_dir}"
+      mv "${_install_dir}/${_out_dir}" "${_final_dir}"
+      cp -a resources/desktop-icons/logo-solo-red.png.iconset/icon_256x256.png "${_final_dir}"
+
+  resources:
+    plugin: dump
+    source: resources
+    organize:
+      tutanota-desktop.desktop: usr/share/applications/tutanota-desktop.desktop
+    prime:
+      - usr/share/applications/tutanota-desktop.desktop
+
+  bin:
+    plugin: dump
+    source: bin
+    organize:
+      start.sh: bin/start.sh
+    prime:
+      - bin/start.sh
+
