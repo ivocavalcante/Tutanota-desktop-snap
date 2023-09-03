@@ -1,13 +1,15 @@
 [Desktop Entry]
 Name=Tutanota Desktop
-GenericName=Tutanota Email Client
-Icon=${SNAP}/opt/tutanota/icon_256x256.png
-Exec=${SNAP}/bin/start.sh %F
+Comment=The desktop client for Tutanota, the secure e-mail service.
+GenericName=Mail Client
+Keywords=Email;E-mail
+Exec=${SNAP}/bin/start.sh %U
 Terminal=false
 Type=Application
-MimeType=model/stl;application/vnd.ms-3mfdocument;application/prs.wavefront-obj;application/x-amf;
-Categories=Graphics;3DGraphics;Engineering;
-Keywords=3D;Printing;Slicer;slice;3D;printer;convert;gcode;stl;obj;amf;SLA
-StartupNotify=false
+Icon=${SNAP}/opt/tutanota/icon_256x256.png
 StartupWMClass=tutanota-desktop
+MimeType=x-scheme-handler/mailto;
+Categories=Network;
+X-Tutanota-Version=#tutanota_version#
+TryExec=${SNAP}/bin/start.sh
 

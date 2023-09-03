@@ -10,13 +10,6 @@ grade: devel
 confinement: strict
 
 plugs:
-  audio-playback:
-  unity7:
-  home:
-  network:
-  removable-media:
-  password-manager-service:
-  browser-support:
   etc-vulkan:
     interface: system-files
     read:
@@ -30,12 +23,30 @@ apps:
       PATH: $SNAP/opt/tutanota:$PATH
     extensions:
       - gnome
+    plugs:
+      - audio-playback
+      - unity7
+      - home
+      - network
+      - removable-media
+      - password-manager-service
+      - browser-support
 
 parts:
+  patches:
+    source: ./patches
+    plugin: dump
+    organize:
+      '*.patch': patches/
+    prime:
+      - -patches/
+
   tutanota-desktop:
+    after:
+      - patches
     plugin: npm
     source: https://github.com/tutao/tutanota.git
-    source-tag: tutanota-release-3.115.2
+    source-tag: tutanota-desktop-release-3.117.0
     build-snaps:
       - node/18/stable
     build-packages:
@@ -56,6 +67,11 @@ parts:
       # Set Snap package version
       craftctl set version="${_version}+${_pkgversion}"
 
+      if [ -d "${CRAFT_STAGE}/patches" ]; then
+          # Apply patches
+          git apply "${CRAFT_STAGE}"/patches/*
+      fi
+
       npm ci
       npm run build-packages --unpacked
       node desktop --custom-desktop-release
@@ -70,10 +86,19 @@ parts:
       cp -a resources/desktop-icons/logo-solo-red.png.iconset/icon_256x256.png "${_final_dir}"
 
   resources:
+    after:
+      - tutanota-desktop
     plugin: dump
     source: resources
     organize:
       tutanota-desktop.desktop: usr/share/applications/tutanota-desktop.desktop
+    override-build: |
+      set -euo pipefail
+
+      _version="$(craftctl get version)"
+      sed -i "s/#tutanota_version#/${_version}/" "${CRAFT_PART_BUILD}/tutanota-desktop.desktop"
+      craftctl default
+
     prime:
       - usr/share/applications/tutanota-desktop.desktop
 
